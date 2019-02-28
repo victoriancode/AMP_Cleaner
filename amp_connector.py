@@ -39,27 +39,27 @@ def main():
 		os.system("clear")
 		print("______________________________________")
 		print('\nAMP4E Endpoint Cleaner')
-		print("______________________________________\n")
-		print("Getting endpoints")
 
 		get_tenants()
-		#print("Tenants:" + str(tenants))
-
+		print(str(len(tenants)) + " tenants registered")
+		print("______________________________________\n")
 
 		for tenant in tenants:
-			print("Tenant " + tenant)
+			print("Tenant: " + tenant)
 			client_id = tenant
 			api_key = tenants[tenant][0]
 			auth_string = "https://{}:{}@api.amp.cisco.com".format(client_id, api_key)
 			age_limit = tenants[tenant][1]
+			print("Timed out: " + str(age_limit) + " days since last seen")
 			action = tenants[tenant][2]
 			group = tenants[tenant][3]
-
+			print("Retrieving endpoints...")
 			json_data = get_json_endpoints(auth_string)
 			endpoints = get_endpoints(json_data)
-			print("Processing inactive entries")
+			print("Processing endpoints...")
 
 			processed_ep = clean_ep(endpoints, age_limit, group)
+			print(str(len(processed_ep)) + " endpoints has timed out")
 			#print(processed_ep)
 			log_endpoints(processed_ep,tenant)
 			#print(action)
@@ -69,7 +69,8 @@ def main():
 
 			elif (action == "log"):
 				log_endpoints(old, client_id)
-			print("Job finished")
+			print("Job finished!")
+			print("______________________________________\n")
 
 			#print(processed_ep)
 
@@ -223,21 +224,26 @@ def clean_ep(endpoints, age_limit, groups):
 def log_endpoints(endpoints, tenant):
 
 	f= open("logs/expired_endpoints_" + tenant + "_" + str(datetime.now()) + ".txt","w+")
+	print("Logging timed out endpoints...")
 
 	for ep in endpoints:
 		f.write("Endpoint: " + ep + "\n")
 
 	f.close() 
+
+	print("Logged " + str(len(endpoints)) + " endpoints")
 	#print("Wrote to file for tenant " + tenant)  
 
 
 #RETURN NONE
 def delete_endpoints(endpoints, auth_string):
 
+	print("Deleting timed out endpoints...")
 	for guid in endpoints:
 		url = auth_string + "/v1/computers/" + guid
 		#print guid
 		response =  requests.request("DELETE", url)
+	print("Deleted " + str(len(endpoints)) + " endpoints from portal")
 
 if __name__ == '__main__':
 	main()
