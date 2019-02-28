@@ -38,10 +38,11 @@ def main():
 	while(1):
 		os.system("clear")
 		print("______________________________________")
-		print('\nAMP4E Endpoint Cleaner')
-
+		print('\n      .:|:.:|:.')
+		print('AMP4E Endpoint Cleaner\n')
 		get_tenants()
-		print(str(len(tenants)) + " tenants registered")
+		print(str(len(tenants)) + " tenant(s) are registered")
+		print(str(sleep_time) + " seconds between checks")
 		print("______________________________________\n")
 
 		for tenant in tenants:
@@ -76,7 +77,7 @@ def main():
 
 			#print("Endpoints processed: " + str(processed_ep))
 
-		print("\nWaiting for next scan \n")
+		print("\nWaiting for next check \n")
 
 		spinner = spinning_cursor()
 		current_time = datetime.now()
@@ -87,7 +88,7 @@ def main():
 			for _ in range(9):
 					sys.stdout.write(next(spinner))
 					sys.stdout.flush()
-					time.sleep(0.5)
+					time.sleep(1)
 					sys.stdout.write("\a")
 
 			
@@ -113,55 +114,6 @@ def get_tenants():
 		group = config.get(str(section), "group")
 		action = config.get(str(section), "action")
 		tenants[client_id] = [api_key, int(age_limit), group, action] 
-
-		#	i = i + 1
-
-
-
-def init_params():
-    """
-    Screen which allows the user to choose how to enter parameters for the script runtime.
-    current options are by entering the information manually, or by reading them from the config.ini
-    file.
-
-    """
-    config_path = "config.ini"
-    global client_id
-    global api_key
-    global sleep_time
-
-    print("______________________________________")
-    print('\nAMP4E Duplicate Fixer')
-    print("______________________________________\n")
-
-    op = raw_input("Enter settings manually? [y/n]")
-
-    if (op == "y"):
-
-        temp = raw_input("Client ID:")
-        if (temp != ""):
-            client_id = temp
-
-        temp = raw_input("API Key:")
-        if (temp != ""):
-            api_key = temp
-
-        temp = raw_input("Scanning Interval (hours):")
-        if (temp != ""):
-            sleep_time = float(temp) * 60
-
-    elif (op == "n"):
-		temp = raw_input("Enter relative path to config file ['/config.ini']")
-		if (temp != ""):
-			config_path = temp
-		config = ConfigParser.ConfigParser()
-		config.read(config_path)
-
-		client_id = config.get("Parameters", "clientID")
-		api_key = config.get("Parameters", "apiKey")
-		sleep_time = config.get("Parameters", "scanInterval")
-		sleep_time = float(sleep_time) * 60
-		auth_string  = "https://{}:{}@api.amp.cisco.com".format(client_id, api_key)
 
 def spinning_cursor(): #Cisco Loading bar
 	while True:
