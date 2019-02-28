@@ -65,9 +65,10 @@ def main():
 			endpoints = get_endpoints(json_data)
 			print("Finding inactive entries")
 
-			processed_ep = clean_ep(endpoints, age_limit, action, group)
-			print_ep
-
+			processed_ep = clean_ep(endpoints, age_limit, group)
+			#print(processed_ep)
+			log_endpoints(processed_ep,tenant)
+			print(action)
 			if (action == "delete"):
 				#delete_endpoints(old, auth_string)
 				pass
@@ -77,9 +78,7 @@ def main():
 
 			print(processed_ep)
 
-			print("Endpoints processed: " + processed_ep) 
-
-			
+			print("Endpoints processed: " + str(processed_ep))
 
 		print("\nWaiting for next scan")
 
@@ -98,7 +97,7 @@ def get_tenants():
 	i = 1
 
 	try:
-		while (i < 3):
+		while (i < 5):
 			print(i)
 			client_id = config.get("Tenant " + str(i), "clientID")
 			api_key = config.get("Tenant " + str(i), "apiKey")
@@ -185,7 +184,8 @@ def get_endpoints(json_data): #RETURNS: dict[guid]=[hostname,install date]
 
 	#get all endpoints stored in amp portal
 	for host in json_data["data"]:
-		endpoints[host["connector_guid"]] = [host["last_seen"], host["group"]]
+		endpoints[host["connector_guid"]] = [host["last_seen"], host["group_guid"]]
+		#print(endpoints[host["connector_guid"]])
 
 	return endpoints #create dict with all endpoints
 
@@ -194,23 +194,26 @@ def get_endpoints(json_data): #RETURNS: dict[guid]=[hostname,install date]
 def clean_ep(endpoints, age_limit, groups):
 
 	old = []
-	current_time = datetime.datetime.now()
+	current_time = datetime.now()
 	inactive_time = None
 
 	for ep in endpoints:
 		guid = endpoints[ep]
-		last_seen = datetime.strptime(ep[last_seen], '%Y-%m-%dT%H:%M:%SZ')
-		group = ep[group]
+		last_seen = datetime.strptime(guid[0], '%Y-%m-%dT%H:%M:%SZ')
+		print(last_seen)
+		group = guid[1]
 		inactive_days = (current_time - last_seen).total_seconds()
 
-		if (inactive_time > age_limit and group in groups):
+		#if (inactive_days > age_limit and group in groups):
+		if (inactive_days > age_limit):
 			#print(str(datetime.strptime(age, '%Y-%m-%dT%H:%M:%SZ')) + "is younger than " + str(youngest[key][1]))
-			old.append(guid)
+			old.append(group)
 		else:
 			#print(str(datetime.strptime(age, '%Y-%m-%dT%H:%M:%SZ')) + "is older than " + str(youngest[key][1]))
 			pass
+	#print(old)
+	return old
 
-	return oldest
 
 def log_endpoints(endpoints, tenant):
 
