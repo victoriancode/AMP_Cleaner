@@ -17,15 +17,10 @@ import ConfigParser
 #parameters:
 
 tenants = {} #dict where key is client id and value is API key [api_key, age_limit, groups]
-sleep_time = #24 hours
+sleep_time = 5
 
 
-def authenticate():
-
-	global auth_string
-
-	auth_string = "https://{}:{}@api.amp.cisco.com".format(client_id, api_key)
-	#print (auth_string)
+def get_json_endpoints(auth_string):
 
 	url = auth_string + "/v1/computers" #JSON parse data
 	r =  requests.request("GET", url)
@@ -39,8 +34,6 @@ def authenticate():
 #script main start
 def main():
 
-	#init_params()
-	#run this forever
 
 	while(1):
 		os.system("clear")
@@ -48,29 +41,43 @@ def main():
 		print('\nAMP4E Endpoint Cleaner')
 		print("______________________________________\n")
 		print("Getting endpoints")
-		spinner = spinning_cursor()
-		for _ in range(5):
-				sys.stdout.write(next(spinner))
-				sys.stdout.flush()
-				time.sleep(0.5)
-				sys.stdout.write("\a")
+		#spinner = spinning_cursor()
+		#for _ in range(5):
+		#		sys.stdout.write(next(spinner))
+		#		sys.stdout.flush()
+		#		time.sleep(0.5)
+		#		sys.stdout.write("\a")
+
+		get_tenants()
+		print("Tenants:" + str(tenants))
+
 
 		for tenant in tenants:
+			print("Tenant " + tenant)
 			client_id = tenant
 			api_key = tenants[tenant][0]
+			auth_string = "https://{}:{}@api.amp.cisco.com".format(client_id, api_key)
 			age_limit = tenants[tenant][1]
 			action = tenants[tenant][2]
 			group = tenants[tenant][3]
 
-			json_data = authenticate(client_id, api_key)
+			json_data = get_json_endpoints(auth_string)
 			endpoints = get_endpoints(json_data)
 			print("Finding inactive entries")
 
-			removed_ep = clean_ep(endpoints, age_limit, action, group)
+			processed_ep = clean_ep(endpoints, age_limit, action, group)
+			print_ep
 
-			print(removed_ep)
+			if (action == "delete"):
+				#delete_endpoints(old, auth_string)
+				pass
 
-			print("Endpoints removed: " + removed_ep) 
+			elif (action == "log"):
+				log_endpoints(old, client_id)
+
+			print(processed_ep)
+
+			print("Endpoints processed: " + processed_ep) 
 
 			
 
@@ -83,24 +90,27 @@ def main():
 
 
 def get_tenants():
-	#parse config file
+	
+	config_path = "config.ini"
 	config = ConfigParser.ConfigParser()
 	config.read(config_path)
 	global tenants 
 	i = 1
 
 	try:
-		while (True):
-			client_id = config.get("Tenant " + i, "clientID")
-			api_key = config.get("Tenant " + i, "apiKey")
-			age_limit = config.get("Tenant " + i, "age_limit")
-			group = config.get("Tenant " + i, "group")
-			action = config.get("Tenant " + i, "action")
-			tenant[clientID] = [api_key, age_limit, group, action] 
+		while (i < 3):
+			print(i)
+			client_id = config.get("Tenant " + str(i), "clientID")
+			api_key = config.get("Tenant " + str(i), "apiKey")
+			age_limit = config.get("Tenant " + str(i), "age_limit")
+			group = config.get("Tenant " + str(i), "group")
+			action = config.get("Tenant " + str(i), "action")
+			tenants[client_id] = [api_key, age_limit, group, action] 
 
-			i =+ 1
-	except:
+			i = i + 1
+	except Exception as e:
 		print(e)
+		print("end of config file all good")
 
 
 
@@ -181,31 +191,42 @@ def get_endpoints(json_data): #RETURNS: dict[guid]=[hostname,install date]
 
 
 #RETURN dict
-def clean_ep(endpoints, age_limit, action, groups):
+def clean_ep(endpoints, age_limit, groups):
 
 	old = []
+	current_time = datetime.datetime.now()
+	inactive_time = None
 
 	for ep in endpoints:
 		guid = endpoints[ep]
 		last_seen = datetime.strptime(ep[last_seen], '%Y-%m-%dT%H:%M:%SZ')
 		group = ep[group]
+		inactive_days = (current_time - last_seen).total_seconds()
 
-		if (last_seen > age_limit && group in groups):
+		if (inactive_time > age_limit and group in groups):
 			#print(str(datetime.strptime(age, '%Y-%m-%dT%H:%M:%SZ')) + "is younger than " + str(youngest[key][1]))
 			old.append(guid)
 		else:
 			#print(str(datetime.strptime(age, '%Y-%m-%dT%H:%M:%SZ')) + "is older than " + str(youngest[key][1]))
 			pass
-		except Exception as e:
-			print(e) 
-		
 
 	return oldest
 
-#RETURN NONE
-def delete_endpoints(endpoints):
+def log_endpoints(endpoints, tenant):
 
-	for guid in duplicates:
+	f= open("expired_endpoints_"+ tenant +".txt","w+")
+
+	for ep in endpoints:
+		f.write("Endpoint: " + ep + "\n")
+
+	f.close() 
+	print("Wrote to file for tenant " + tenant)  
+
+
+#RETURN NONE
+def delete_endpoints(endpoints, auth_string):
+
+	for guid in endpoints:
 		url = auth_string + "/v1/computers/" + guid
 		print guid
 		response =  requests.request("DELETE", url)
