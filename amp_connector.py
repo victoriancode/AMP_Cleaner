@@ -46,14 +46,14 @@ def main():
 		print("______________________________________\n")
 
 		for tenant in tenants:
-			print("Tenant: " + tenant)
+			print("Tenant ID: " + tenant)
 			client_id = tenant
 			api_key = tenants[tenant][0]
 			auth_string = "https://{}:{}@api.amp.cisco.com".format(client_id, api_key)
 			age_limit = tenants[tenant][1]
 			print("Timed out: " + str(age_limit) + " days since last seen")
-			action = tenants[tenant][2]
-			group = tenants[tenant][3]
+			group = tenants[tenant][2]
+			action = tenants[tenant][3]
 			print("Retrieving endpoints...")
 			json_data = get_json_endpoints(auth_string)
 			endpoints = get_endpoints(json_data)
@@ -61,15 +61,13 @@ def main():
 
 			processed_ep = clean_ep(endpoints, age_limit, group)
 			print(str(len(processed_ep)) + " endpoints has timed out")
-			#print(processed_ep)
-			log_endpoints(processed_ep,tenant)
-			#print(action)
+
 			if (action == "delete"):
-				#delete_endpoints(old, auth_string)
-				pass
+				delete_endpoints(processed_ep, auth_string)
 
 			elif (action == "log"):
-				log_endpoints(old, client_id)
+				log_endpoints(processed_ep, client_id)
+
 			print("Job finished!")
 			print("______________________________________\n")
 
@@ -162,10 +160,10 @@ def clean_ep(endpoints, age_limit, groups):
 		inactive_days = (current_time - last_seen).days
 		#print(inactive_days)
 
-		#if (inactive_days > age_limit and group in groups):
-		if (inactive_days > age_limit):
+		if (inactive_days > age_limit and group in groups):
+		#if (inactive_days > age_limit):
 			#print(str(datetime.strptime(age, '%Y-%m-%dT%H:%M:%SZ')) + "is younger than " + str(youngest[key][1]))
-			old.append(group)
+			old.append(ep)
 		else:
 			#print(str(datetime.strptime(age, '%Y-%m-%dT%H:%M:%SZ')) + "is older than " + str(youngest[key][1]))
 			pass
